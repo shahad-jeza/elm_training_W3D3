@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task List</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/redux/4.2.0/redux.min.js"></script> 
+</head>
+<body>
+  <h1>Task List</h1>
+  <input type="text" id="new-task" placeholder="Enter new task">
+  <button onclick="addNewTask()">Add Task</button>
+  <p id="error-message" style="color: red;"></p>
+
+  <!-- Filter Tasks based om complete- pending -->
+  <select id="filter" onchange="renderTasks()">
+    <option value="all">All</option>
+    <option value="completed">Completed</option>
+    <option value="pending">Pending</option>
+  </select>
+
+  <ul id="task-list"></ul>
+
+<script>
+  
+  // Redux action types
+  const ADD_TASK = 'ADD_TASK';
+  const UPDATE_TASK = 'UPDATE_TASK';
+  const DELETE_TASK = 'DELETE_TASK';
+  const SET_TASKS = 'SET_TASKS';
+
+  // task 5 Load saved tasks from localStorage 
+  const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+
+  // task 2 : state managment
+  // 1. Create a reducer
+  function taskReducer(state = savedTasks, action) {
+    switch (action.type) {
+      case ADD_TASK:
+        return [...state, action.payload];
+      case UPDATE_TASK:
+        return state.map(task =>
+          task.id === action.payload.id ? { ...task, title: action.payload.title } : task
+        );
+      case DELETE_TASK:
+        return state.filter(task => task.id !== action.payload);
+      case SET_TASKS:
+        return action.payload;
+      default:
+        return state;
+    }
+  }
+
+  //  Create Redux store
+  const store = Redux.createStore(taskReducer);
+
+  // Persist tasks in localStorage >> task 5
+  store.subscribe(() => {
+    localStorage.setItem('tasks', JSON.stringify(store.getState()));
+  });
+
+  // task 1: Fetch tasks from API
+  function fetchTasks() {
+    fetch('https://jsonplaceholder.typicode.com/todos?_limit=10')
+      .then(response => response.json())
+      .then(tasks => {
+        store.dispatch({ type: SET_TASKS, payload: tasks });
+      })
+      .catch(error => console.error('Error fetching tasks', error));
+  }
+
+  // task2 Add a new task
+  function addNewTask() {
+    const taskInput = document.getElementById('new-task');
+    const errorMessage = document.getElementById('error-message');
+    const taskTitle = taskInput.value.trim();
+
+    //task3:  Validation Rules
+    if (taskTitle === '') {
+      errorMessage.textContent = "Task cannot be empty.";
+      return;
+    }
+    if (taskTitle.length < 5) {
+      errorMessage.textContent = "Task should have at least 5 characters.";
+      return;
+    }
+
+    errorMessage.textContent = ""; // Clear error message
+
+    const newTask = { id: Date.now(), title: taskTitle, completed: false };
+    store.dispatch({ type: ADD_TASK, payload: newTask });
+    taskInput.value = '';
+  }
+
+  // task2: Update a task title
+  function updateTask(id) {
+    const newTitle = prompt('Enter new task title:');
+    if (newTitle && newTitle.trim().length >= 5) {
+      store.dispatch({ type: UPDATE_TASK, payload: { id, title: newTitle.trim() } });
+    } else {
+      alert("Task should have at least 5 characters.");
+    }
+  }
+
+  // task2:  Delete a task
+  function deleteTask(id) {
+    store.dispatch({ type: DELETE_TASK, payload: id });
+  }
+
+  // task4: Render tasks based on filter
+  function renderTasks() {
+    const taskList = document.getElementById('task-list');
+    const filter = document.getElementById('filter').value;
+    taskList.innerHTML = '';
+    const tasks = store.getState();
+
+    const filteredTasks = tasks.filter(task => {
+      if (filter === 'completed') return task.completed;
+      if (filter === 'pending') return !task.completed;
+      return true;
+    });
+
+    filteredTasks.forEach(task => {
+      const li = document.createElement('li');
+      li.innerHTML = `${task.title} - ${task.completed ? 'Completed' : 'Pending'} 
+        <button onclick="updateTask(${task.id})">Edit</button>
+        <button onclick="deleteTask(${task.id})">Delete</button>`;
+      taskList.appendChild(li);
+    });
+  }
+
+  // . Subscribe to Redux store updates
+  store.subscribe(renderTasks);
+
+  // Load tasks on page load
+  renderTasks();
+</script>
+</body>
+</html>
