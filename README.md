@@ -15,13 +15,6 @@ A simple task management application using **HTML, JavaScript, and Redux**. It a
 ## Installation
 No installation required! Just open the `index.html` file in a browser.
 
-## Usage
-1. **Fetch Initial Tasks**: Click the `Fetch Tasks` button to load sample tasks.
-2. **Add a Task**: Type in the input field and click `Add Task`.
-3. **Edit a Task**: Click the `Edit` button on a task.
-4. **Delete a Task**: Click the `Delete` button on a task.
-5. **Filter Tasks**: Use the dropdown to view completed or pending tasks.
-6. **Reorder Tasks**: Drag and drop tasks to change their order.
 
 ## Technologies Used
 - **HTML**
