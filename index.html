@@ -21,8 +21,9 @@
 
   <ul id="task-list"></ul>
 
+
 <script>
-  
+  let draggedTaskId = null;
   // Redux action types
   const ADD_TASK = 'ADD_TASK';
   const UPDATE_TASK = 'UPDATE_TASK';
@@ -114,20 +115,48 @@
     taskList.innerHTML = '';
     const tasks = store.getState();
 
+    // Apply filter
     const filteredTasks = tasks.filter(task => {
       if (filter === 'completed') return task.completed;
       if (filter === 'pending') return !task.completed;
       return true;
     });
 
-    filteredTasks.forEach(task => {
+    filteredTasks.forEach((task, index) => {
       const li = document.createElement('li');
       li.innerHTML = `${task.title} - ${task.completed ? 'Completed' : 'Pending'} 
         <button onclick="updateTask(${task.id})">Edit</button>
         <button onclick="deleteTask(${task.id})">Delete</button>`;
+      
+      // Add Drag & Drop Events
+      li.setAttribute('draggable', 'true');
+      li.dataset.index = index; // Store index for swapping
+
+      li.addEventListener('dragstart', (event) => {
+        draggedTaskId = event.target.dataset.index;
+      });
+
+      li.addEventListener('dragover', (event) => {
+        event.preventDefault(); // Allow drop
+      });
+
+      li.addEventListener('drop', (event) => {
+        event.preventDefault();
+        const droppedTaskId = event.target.dataset.index;
+        swapTasks(draggedTaskId, droppedTaskId);
+      });
+
       taskList.appendChild(li);
     });
   }
+
+  function swapTasks(fromIndex, toIndex) {
+    const tasks = [...store.getState()];
+    [tasks[fromIndex], tasks[toIndex]] = [tasks[toIndex], tasks[fromIndex]]; // Swap
+    store.dispatch({ type: SET_TASKS, payload: tasks }); // Update store
+  }
+
+  
 
   // . Subscribe to Redux store updates
   store.subscribe(renderTasks);
